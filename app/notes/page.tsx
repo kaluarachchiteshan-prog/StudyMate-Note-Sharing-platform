@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BookOpen, Search, Filter, SlidersHorizontal, UploadCloud, FileText } from 'lucide-react';
 import { StudyNote } from '@/types';
@@ -10,7 +10,7 @@ import NoteCard from '@/components/NoteCard';
 import NotePreviewModal from '@/components/NotePreviewModal';
 import Link from 'next/link';
 
-export default function NotesDirectoryPage() {
+function NotesDirectoryPageContent() {
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
 
@@ -145,5 +145,13 @@ export default function NotesDirectoryPage() {
       )}
 
     </div>
+  );
+}
+
+export default function NotesDirectoryPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-slate-400">Loading notes...</div>}>
+      <NotesDirectoryPageContent />
+    </Suspense>
   );
 }
