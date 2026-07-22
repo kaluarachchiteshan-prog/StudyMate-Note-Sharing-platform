@@ -34,7 +34,7 @@ export async function signUpWithEmail(email: string, pass: string, name: string)
     user: {
       uid: `user_${Date.now()}`,
       email,
-      displayName: name || 'New Scholar',
+      displayName: name || 'Nimal Perera',
       photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
     }
   };
@@ -48,8 +48,8 @@ export async function loginWithGoogle() {
   return {
     user: {
       uid: 'user_google_mock',
-      email: 'scholar.google@stanford.edu',
-      displayName: 'Alex Chen (Google User)',
+      email: 'scholar.google@uom.lk',
+      displayName: 'Nimal Perera (Google User)',
       photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
     }
   };

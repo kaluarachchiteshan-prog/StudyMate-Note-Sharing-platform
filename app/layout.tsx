@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import FirebaseStatusBanner from "@/components/FirebaseStatusBanner";
@@ -7,15 +6,7 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import ToastContainer from "@/components/ToastContainer";
 
-const inter = Inter({ 
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-outfit",
-});
+const fontClassName = "font-sans";
 
 export const metadata: Metadata = {
   title: "StudyMate Hub | Note-Sharing & Peer Learning Platform",
@@ -29,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} ${outfit.variable} bg-[#0b0f19] text-slate-100 font-sans min-h-screen flex flex-col antialiased`}>
+      <body className={`${fontClassName} bg-[#0b0f19] text-slate-100 min-h-screen flex flex-col antialiased`}>
         <AuthProvider>
           <FirebaseStatusBanner />
           <Navbar />
