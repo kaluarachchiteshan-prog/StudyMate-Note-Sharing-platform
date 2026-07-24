@@ -29,7 +29,7 @@ export default function StudentCard({ student }: StudentCardProps) {
         {/* Profile Header */}
         <div className="flex items-start gap-3">
           <img
-            src={student.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250'}
+            src={student.photoURL || '/images/default-sri-avatar.svg'}
             alt={student.displayName}
             className="w-12 h-12 rounded-xl object-cover ring-2 ring-indigo-500/30 shrink-0"
           />

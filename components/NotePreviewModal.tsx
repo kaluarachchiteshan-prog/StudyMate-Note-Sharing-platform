@@ -180,7 +180,7 @@ export default function NotePreviewModal({ note, onClose }: NotePreviewModalProp
                   <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Contributor Profile</p>
                   <div className="flex items-center gap-3">
                     <img
-                      src={note.authorAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250'}
+                      src={note.authorAvatar || '/images/default-sri-avatar.svg'}
                       alt={note.authorName}
                       className="w-10 h-10 rounded-xl object-cover ring-2 ring-indigo-500/30"
                     />

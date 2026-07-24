@@ -95,7 +95,7 @@ export default function Navbar({ onToggleSidebar }: { onToggleSidebar?: () => vo
                 className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors"
               >
                 <img
-                  src={user.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250'}
+                  src={user.photoURL || '/images/default-sri-avatar.svg'}
                   alt={user.displayName}
                   className="w-8 h-8 rounded-lg object-cover ring-2 ring-indigo-500/30"
                 />

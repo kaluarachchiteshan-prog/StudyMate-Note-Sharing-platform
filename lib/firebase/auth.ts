@@ -35,7 +35,7 @@ export async function signUpWithEmail(email: string, pass: string, name: string)
       uid: `user_${Date.now()}`,
       email,
       displayName: name || 'Nimal Perera',
-      photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+      photoURL: '/images/default-sri-avatar.svg',
     }
   };
 }
@@ -50,7 +50,7 @@ export async function loginWithGoogle() {
       uid: 'user_google_mock',
       email: 'scholar.google@uom.lk',
       displayName: 'Nimal Perera (Google User)',
-      photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+      photoURL: '/images/default-sri-avatar.svg',
     }
   };
 }

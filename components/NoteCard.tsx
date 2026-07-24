@@ -105,7 +105,7 @@ export default function NoteCard({ note, onPreview }: NoteCardProps) {
         <div className="flex items-center justify-between text-xs text-slate-400">
           <div className="flex items-center gap-2">
             <img
-              src={note.authorAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250'}
+              src={note.authorAvatar || '/images/default-sri-avatar.svg'}
               alt={note.authorName}
               className="w-6 h-6 rounded-full object-cover ring-1 ring-slate-700"
             />

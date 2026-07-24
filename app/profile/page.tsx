@@ -104,10 +104,10 @@ export default function ProfilePage() {
           
           <div className="flex items-center gap-4">
             <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-              <img
-                src={user?.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250'}
+                  <img
+                    src={user?.photoURL || '/images/default-sri-avatar.svg'}
                 alt={user?.displayName}
-                className="w-16 h-16 rounded-2xl object-cover ring-4 ring-sky-500/30 transition-opacity group-hover:opacity-70"
+                    className="w-16 h-16 rounded-2xl object-cover ring-4 ring-sky-500/30 transition-opacity group-hover:opacity-70"
               />
               <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <Upload className="w-5 h-5 text-white" />
