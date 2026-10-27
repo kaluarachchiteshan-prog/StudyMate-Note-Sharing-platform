@@ -1,10 +1,12 @@
 node_modules/
 .next/
+client/dist/
 out/
 build/
 dist/
 coverage/
 *.tsbuildinfo
+.data/
 .env
 .env.*
 !.env.example
