@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import FirebaseStatusBanner from "@/components/FirebaseStatusBanner";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+import AppShell from "@/components/AppShell";
 import ToastContainer from "@/components/ToastContainer";
 
 const fontClassName = "font-sans";
@@ -23,16 +22,7 @@ export default function RootLayout({
       <body className={`${fontClassName} bg-[#0b0f19] text-slate-100 min-h-screen flex flex-col antialiased`}>
         <AuthProvider>
           <FirebaseStatusBanner />
-          <Navbar />
-          
-          <div className="flex-1 flex max-w-7xl w-full mx-auto">
-            <Sidebar />
-            
-            <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-5xl overflow-x-hidden">
-              {children}
-            </main>
-          </div>
-
+          <AppShell>{children}</AppShell>
           <ToastContainer />
         </AuthProvider>
       </body>

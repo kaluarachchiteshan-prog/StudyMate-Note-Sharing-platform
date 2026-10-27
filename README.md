@@ -59,6 +59,15 @@ This local classroom demo does not include sign-in, authorization, or binary fil
 
 The original Next.js routes and Firebase modules remain in the repository as reference material; the runnable MERN implementation is in `client/` and `server/`.
 
+## Assignment submission materials
+
+- **Mini-project report (8 pages):** [PDF](docs/submission/EG_2023_5537_StudyMate_Mini_Project_Report.pdf) and [editable Markdown source](docs/submission/EG_2023_5537_StudyMate_Mini_Project_Report.md).
+- **Demonstration plan:** [timed script designed to stay under 5 minutes](docs/submission/EG_2023_5537_StudyMate_Demo_Script.md).
+
+The report uses underscores in the filename in place of slashes in index number `EG/2023/5537`, while displaying the index number in its original format. Record the demonstration with the camera on as specified in the evaluation rubric.
+
+To regenerate the PDF from its editable Markdown source on Windows, install ReportLab with `python -m pip install reportlab`, then run `python docs\submission\build_report.py`.
+
 ## Database design
 
 `studymate.notes` is a MongoDB collection. MongoDB assigns each note an `_id` ObjectId primary key. Timestamps are maintained by Mongoose. The sample notes have no required relationship to another collection, keeping CRUD independently demonstrable.

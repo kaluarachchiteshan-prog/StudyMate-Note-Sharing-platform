@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Layers3,
   LoaderCircle,
+  Menu,
   Pencil,
   Plus,
   Search,
@@ -60,6 +61,7 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [actionError, setActionError] = useState("");
   const [pendingId, setPendingId] = useState("");
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const loadNotes = useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
@@ -142,10 +144,31 @@ export default function App() {
     return () => window.clearTimeout(timeout);
   }, [notice]);
 
+  useEffect(() => {
+    if (!isMobileSidebarOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMobileSidebarOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMobileSidebarOpen]);
+
   return (
     <div className="min-h-screen text-slate-100">
       <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-[#080d18]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6">
+          <button
+            type="button"
+            className="rounded-lg p-2 text-slate-300 transition hover:bg-slate-800 hover:text-white lg:hidden"
+            aria-label={isMobileSidebarOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={isMobileSidebarOpen}
+            aria-controls="study-notes-sidebar"
+            onClick={() => setIsMobileSidebarOpen((open) => !open)}
+          >
+            {isMobileSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
           <a href="#" className="flex items-center gap-3" aria-label="StudyMate Hub home">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 shadow-lg shadow-sky-950/50">
               <GraduationCap className="h-6 w-6 text-white" />
@@ -168,7 +191,23 @@ export default function App() {
       </header>
 
       <div className="mx-auto flex max-w-[1440px]">
-        <aside className="hidden w-[250px] shrink-0 border-r border-slate-800/70 px-4 py-8 lg:block">
+        {isMobileSidebarOpen && (
+          <button
+            type="button"
+            className="fixed inset-x-0 bottom-0 top-[72px] z-30 bg-slate-950/70 lg:hidden"
+            aria-label="Close navigation menu"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
+        <aside
+          id="study-notes-sidebar"
+          aria-label="Main navigation"
+          className={`${
+            isMobileSidebarOpen
+              ? "fixed bottom-0 left-0 top-[72px] z-40 block w-[min(85vw,300px)] overflow-y-auto border-r border-slate-800 bg-[#080d18] px-4 py-8 shadow-2xl"
+              : "hidden"
+          } shrink-0 lg:sticky lg:bottom-auto lg:left-auto lg:top-[72px] lg:z-20 lg:block lg:h-[calc(100vh-72px)] lg:w-[250px] lg:overflow-y-auto lg:border-r lg:border-slate-800/70 lg:bg-transparent lg:px-4 lg:py-8 lg:shadow-none`}
+        >
           <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">Workspace</p>
           <div className="nav-item nav-item-active">
             <BookOpen className="h-4 w-4" />

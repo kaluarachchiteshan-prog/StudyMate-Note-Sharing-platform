@@ -37,6 +37,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
   return (
     <aside 
+      id="study-mate-sidebar"
+      aria-label="Main navigation"
       className={`fixed lg:sticky top-16 z-30 h-[calc(100vh-4rem)] w-64 bg-slate-950/95 lg:bg-slate-950/60 border-r border-slate-800/80 p-4 flex flex-col justify-between transition-transform duration-300 ${
         isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}

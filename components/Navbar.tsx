@@ -8,9 +8,7 @@ import {
   Search, 
   Upload, 
   User, 
-  LogOut, 
   BookOpen, 
-  Users, 
   Award,
   ChevronDown,
   Sparkles,
@@ -20,9 +18,15 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { MOCK_USERS } from '@/lib/mockData';
 
-export default function Navbar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
+export default function Navbar({
+  isSidebarOpen = false,
+  onToggleSidebar,
+}: {
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
+}) {
   const router = useRouter();
-  const { user, switchMockUser, showToast } = useAuth();
+  const { user, switchMockUser } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showMockSelector, setShowMockSelector] = useState(false);
@@ -43,9 +47,13 @@ export default function Navbar({ onToggleSidebar }: { onToggleSidebar?: () => vo
           {onToggleSidebar && (
             <button 
               onClick={onToggleSidebar}
+              type="button"
+              aria-label={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={isSidebarOpen}
+              aria-controls="study-mate-sidebar"
               className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
             >
-              <Menu className="w-5 h-5" />
+              {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           )}
 
