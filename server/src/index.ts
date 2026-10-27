@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { app } from "./app.js";
+import { migrateLegacyNotes } from "./notes/migrateLegacyNotes.js";
 import { seedNotesIfEmpty } from "./seedNotes.js";
 
 dotenv.config({ path: resolve(dirname(fileURLToPath(import.meta.url)), "../.env") });
@@ -13,6 +14,7 @@ const mongoUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/studymate
 try {
   await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
   console.info("Connected to MongoDB.");
+  await migrateLegacyNotes();
   await seedNotesIfEmpty();
   app.listen(port, "127.0.0.1", () => {
     console.info(`StudyMate API listening on http://127.0.0.1:${port}`);

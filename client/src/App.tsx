@@ -358,7 +358,7 @@ function NoteCard({
     <article className="note-card group">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-wrap gap-1.5">
-          <span className="badge badge-blue">{note.courseCode}</span>
+          <span className="badge badge-blue">{note.courseCode || "GENERAL"}</span>
           <span className="badge badge-purple">{note.subject}</span>
         </div>
         <span className="rounded-md border border-slate-700/80 px-1.5 py-0.5 text-[9px] font-bold uppercase text-slate-400">{note.fileType}</span>
@@ -368,8 +368,8 @@ function NoteCard({
         <p className="mt-2 line-clamp-3 min-h-[3.4em] text-[11px] leading-relaxed text-slate-400">{note.description}</p>
       </button>
       <div className="mt-4 flex min-h-6 flex-wrap gap-1.5">
-        {note.tags.slice(0, 3).map((tag) => <span key={tag} className="tag-chip">#{tag}</span>)}
-        {note.tags.length > 3 && <span className="tag-chip">+{note.tags.length - 3}</span>}
+        {(note.tags || []).slice(0, 3).map((tag) => <span key={tag} className="tag-chip">#{tag}</span>)}
+        {(note.tags || []).length > 3 && <span className="tag-chip">+{note.tags.length - 3}</span>}
       </div>
       <div className="mt-4 border-t border-slate-800/90 pt-3">
         <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400">
@@ -521,7 +521,7 @@ function NoteDetails({ note, onClose, onEdit, onDelete, isDeleting }: {
       <section className="modal-panel max-w-3xl" role="dialog" aria-modal="true" aria-labelledby="note-detail-title">
         <div className="flex items-start justify-between border-b border-slate-800 px-5 py-4 sm:px-6">
           <div className="min-w-0">
-            <div className="flex flex-wrap gap-1.5"><span className="badge badge-blue">{note.courseCode}</span><span className="badge badge-purple">{note.subject}</span></div>
+            <div className="flex flex-wrap gap-1.5"><span className="badge badge-blue">{note.courseCode || "GENERAL"}</span><span className="badge badge-purple">{note.subject}</span></div>
             <h2 id="note-detail-title" className="mt-2 font-display text-lg font-semibold leading-snug text-white sm:text-xl">{note.title}</h2>
           </div>
           <button type="button" className="icon-button ml-3 shrink-0" onClick={onClose} aria-label="Close note details"><X className="h-4 w-4" /></button>
@@ -535,7 +535,7 @@ function NoteDetails({ note, onClose, onEdit, onDelete, isDeleting }: {
           <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
             <h3 className="mb-2 text-xs font-semibold text-white">About this note</h3>
             <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-300">{note.description}</p>
-            {note.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{note.tags.map((tag) => <span className="tag-chip" key={tag}>#{tag}</span>)}</div>}
+            {(note.tags || []).length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{note.tags.map((tag) => <span className="tag-chip" key={tag}>#{tag}</span>)}</div>}
           </div>
           <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
             <div className="mb-3 flex items-center justify-between gap-3">

@@ -36,7 +36,7 @@ StudyMate Hub is a course-note sharing application built as a MERN-style mini pr
    npm run dev
    ```
 
-5. Open `http://localhost:5173`. The API runs on `http://127.0.0.1:5000`; Vite proxies `/api` requests to it. On the first connection to an empty database, four sample notes are inserted. Set `SEED_DEMO_DATA=false` in `server/.env` to disable this for a clean database.
+5. Open `http://localhost:5173`. The API runs on `http://127.0.0.1:5000`; Vite proxies `/api` requests to it. On startup, existing legacy StudyMate notes are migrated in place to the current note schema without deleting them. On the first connection to an empty database, four sample notes are inserted. Set `SEED_DEMO_DATA=false` in `server/.env` to disable this for a clean database.
 
 ## Study-note operations
 
