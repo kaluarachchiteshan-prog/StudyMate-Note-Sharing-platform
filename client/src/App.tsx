@@ -178,10 +178,6 @@ export default function App() {
               <span className="hidden text-[10px] font-medium tracking-wide text-slate-500 sm:block">NOTES & PEER LEARNING</span>
             </span>
           </a>
-          <div className="hidden items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-1.5 text-[11px] font-medium text-emerald-300 sm:flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            Local MongoDB demo
-          </div>
           <button type="button" onClick={openCreateForm} className="primary-button">
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Share a note</span>
