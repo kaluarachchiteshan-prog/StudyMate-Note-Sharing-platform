@@ -6,6 +6,7 @@ const optionalHttpUrl = z
   .max(500)
   .refine((value) => {
     if (!value) return true;
+    if (/^\/api\/uploads\/[0-9a-f-]{36}-[A-Za-z0-9._-]{1,180}$/i.test(value)) return true;
     try {
       const url = new URL(value);
       return url.protocol === "http:" || url.protocol === "https:";

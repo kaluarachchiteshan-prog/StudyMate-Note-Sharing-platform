@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import {
   AlertCircle,
   ArrowDownWideNarrow,
@@ -20,17 +20,26 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { createNote, deleteNote, fetchNotes, updateNote } from "./api";
+import { createNote, deleteNote, fetchNotes, recordNoteDownload, updateNote, uploadNoteFile } from "./api";
 import type { NoteInput, NoteFilters, StudyNote } from "./types";
 
-const subjects = ["All", "Computer Science", "Mathematics", "Biology", "Economics", "Physics"];
-
+const courseSubjects = [
+  "EC4307 Web Application Development",
+  "EC5202 Digital System Design with HDL",
+  "EC5203 Machine Learning",
+  "EC5205 Operating System and Network Programming",
+  "EC5207 DevOps Engineering",
+  "EC5301 Control Systems Design",
+  "EC5406 Software Project",
+  "Labs_25th Batch",
+  "Software Testing & Quality Assurance",
+];
 const emptyNote: NoteInput = {
   title: "",
   description: "",
   subject: "",
   courseCode: "",
-  university: "",
+  university: "University of Ruhuna, Faculty of Engineering",
   tags: [],
   fileUrl: "",
   fileName: "",
@@ -58,6 +67,7 @@ export default function App() {
   const [loadError, setLoadError] = useState("");
   const [editorNote, setEditorNote] = useState<StudyNote | null | "new">(null);
   const [detailNote, setDetailNote] = useState<StudyNote | null>(null);
+  const [recentlyViewedSubject, setRecentlyViewedSubject] = useState("");
   const [notice, setNotice] = useState("");
   const [actionError, setActionError] = useState("");
   const [pendingId, setPendingId] = useState("");
@@ -86,6 +96,10 @@ export default function App() {
   const noteCountLabel = useMemo(
     () => `${notes.length} ${notes.length === 1 ? "note" : "notes"}`,
     [notes.length],
+  );
+  const visibleSubjects = useMemo(
+    () => ["All", ...(recentlyViewedSubject ? [recentlyViewedSubject] : []), ...courseSubjects.filter((subject) => subject !== recentlyViewedSubject)],
+    [recentlyViewedSubject],
   );
 
   const openCreateForm = () => {
@@ -135,6 +149,17 @@ export default function App() {
       setActionError(error instanceof Error ? error.message : "Could not delete this note.");
     } finally {
       setPendingId("");
+    }
+  };
+
+  const handleDownload = async (note: StudyNote) => {
+    setActionError("");
+    try {
+      const { downloadsCount } = await recordNoteDownload(note._id);
+      setNotes((current) => current.map((item) => item._id === note._id ? { ...item, downloadsCount } : item));
+      setDetailNote((current) => current?._id === note._id ? { ...current, downloadsCount } : current);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not record this download.");
     }
   };
 
@@ -288,9 +313,9 @@ export default function App() {
                 </label>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="mr-1 text-[11px] font-medium text-slate-500">Subject</span>
-                {subjects.map((subject) => (
+              <div className="flex min-w-0 items-center gap-2 overflow-x-auto whitespace-nowrap">
+                <span className="mr-1 shrink-0 text-[11px] font-medium text-slate-500">Subject</span>
+                {visibleSubjects.map((subject) => (
                   <button
                     key={subject}
                     type="button"
@@ -301,7 +326,7 @@ export default function App() {
                     {subject}
                   </button>
                 ))}
-                <span className="ml-auto hidden text-[11px] text-slate-500 sm:inline">{noteCountLabel}</span>
+                <span className="ml-auto hidden shrink-0 text-[11px] text-slate-500 sm:inline">{noteCountLabel}</span>
               </div>
             </section>
 
@@ -332,9 +357,13 @@ export default function App() {
                     key={note._id}
                     note={note}
                     isPending={pendingId === note._id}
-                    onPreview={() => setDetailNote(note)}
+                    onPreview={() => {
+                      setRecentlyViewedSubject(note.subject);
+                      setDetailNote(note);
+                    }}
                     onEdit={() => openEditForm(note)}
                     onDelete={() => void handleDelete(note)}
+                    onDownload={() => void handleDownload(note)}
                   />
                 ))}
               </div>
@@ -369,6 +398,7 @@ export default function App() {
           onClose={() => setDetailNote(null)}
           onEdit={() => openEditForm(detailNote)}
           onDelete={() => void handleDelete(detailNote)}
+          onDownload={() => void handleDownload(detailNote)}
           isDeleting={pendingId === detailNote._id}
         />
       )}
@@ -382,12 +412,14 @@ function NoteCard({
   onPreview,
   onEdit,
   onDelete,
+  onDownload,
 }: {
   note: StudyNote;
   isPending: boolean;
   onPreview: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onDownload: () => void;
 }) {
   return (
     <article className="note-card group">
@@ -413,7 +445,24 @@ function NoteCard({
         </div>
         <div className="mt-3 flex items-center justify-between">
           <span className="max-w-[130px] truncate text-[10px] font-medium text-slate-300">{note.authorName}</span>
-          <span className="flex items-center gap-1 text-[10px] text-slate-500"><Download className="h-3 w-3 text-sky-400" />{note.downloadsCount}</span>
+          {note.fileUrl ? (
+            <a
+              href={note.fileUrl}
+              target="_blank"
+              rel="noreferrer"
+              download={note.fileName || undefined}
+              onClick={onDownload}
+              aria-label={`Download notes: ${note.title}`}
+              title="Download notes"
+              className="flex items-center gap-1 text-[10px] text-slate-500 transition hover:text-sky-300"
+            >
+              <Download className="h-3 w-3 text-sky-400" />{note.downloadsCount}
+            </a>
+          ) : (
+            <span className="flex items-center gap-1 text-[10px] text-slate-500" title="No file attached">
+              <Download className="h-3 w-3 text-slate-600" />{note.downloadsCount}
+            </span>
+          )}
         </div>
         <div className="mt-3 flex gap-2">
           <button type="button" onClick={onPreview} className="secondary-button flex-1">View details</button>
@@ -453,9 +502,43 @@ function NoteEditor({
   } : emptyNote);
   const [tagsValue, setTagsValue] = useState(form.tags.join(", "));
   const [formError, setFormError] = useState("");
+  const [uploadError, setUploadError] = useState("");
+  const [uploadSuccess, setUploadSuccess] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const setField = <K extends keyof NoteInput>(key: K, value: NoteInput[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) return;
+
+    setUploadError("");
+    setUploadSuccess("");
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError("Choose a file that is 10 MB or smaller.");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const uploadedFile = await uploadNoteFile(file);
+      setForm((current) => ({
+        ...current,
+        fileUrl: uploadedFile.url,
+        fileName: uploadedFile.fileName,
+        fileSize: uploadedFile.fileSize,
+        fileType: uploadedFile.fileType,
+      }));
+      setUploadSuccess(`File uploaded successfully: ${uploadedFile.fileName}`);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "The file could not be uploaded.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -488,10 +571,13 @@ function NoteEditor({
               <input required minLength={2} maxLength={30} value={form.courseCode} onChange={(event) => setField("courseCode", event.target.value)} placeholder="CS161" />
             </Field>
             <Field label="Subject" required>
-              <input required minLength={2} maxLength={80} value={form.subject} onChange={(event) => setField("subject", event.target.value)} placeholder="Computer Science" />
+              <input required minLength={2} maxLength={80} list="course-subjects" value={form.subject} onChange={(event) => setField("subject", event.target.value)} placeholder="Choose or enter a subject" />
+              <datalist id="course-subjects">
+                {courseSubjects.map((subject) => <option key={subject} value={subject} />)}
+              </datalist>
             </Field>
             <Field label="University" required>
-              <input required minLength={2} maxLength={120} value={form.university} onChange={(event) => setField("university", event.target.value)} placeholder="University of Moratuwa" />
+              <input required minLength={2} maxLength={120} value={form.university} onChange={(event) => setField("university", event.target.value)} placeholder="University of Ruhuna, Faculty of Engineering" />
             </Field>
           </div>
           <Field label="Description" required>
@@ -499,6 +585,31 @@ function NoteEditor({
           </Field>
           <Field label="Tags" hint="Separate tags with commas; use up to 10.">
             <input value={tagsValue} onChange={(event) => setTagsValue(event.target.value)} placeholder="Algorithms, Graphs, Exam Prep" />
+          </Field>
+          <Field label="Upload a file" hint="PDF, Word (.doc/.docx), or text file. Maximum size: 10 MB.">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+              onChange={(event) => void handleFileChange(event)}
+              disabled={isUploading || isSaving}
+              className="sr-only"
+            />
+            <button
+              type="button"
+              className="secondary-button w-fit"
+              onClick={() => {
+                if (!fileInputRef.current) return;
+                fileInputRef.current.value = "";
+                fileInputRef.current.click();
+              }}
+              disabled={isUploading || isSaving}
+            >
+              {isUploading ? "Uploading..." : uploadSuccess ? "Change file" : "Choose file"}
+            </button>
+            {isUploading && <span role="status" className="text-xs text-sky-300">Uploading file...</span>}
+            {uploadError && <span role="alert" className="text-xs text-rose-300">{uploadError}</span>}
+            {uploadSuccess && <span role="status" className="flex items-center gap-1 text-xs text-emerald-300"><Check className="h-3.5 w-3.5 shrink-0" />{uploadSuccess}</span>}
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="File name">
@@ -514,16 +625,16 @@ function NoteEditor({
             <Field label="File size">
               <input maxLength={30} value={form.fileSize} onChange={(event) => setField("fileSize", event.target.value)} placeholder="2.4 MB" />
             </Field>
-            <Field label="File URL" hint="Optional public http(s) link. Uploads are not enabled in this local demo.">
-              <input type="url" maxLength={500} value={form.fileUrl} onChange={(event) => setField("fileUrl", event.target.value)} placeholder="https://example.com/notes.pdf" />
+            <Field label="File URL" hint="Optional public http(s) link, or upload a file above.">
+              <input type="text" maxLength={500} value={form.fileUrl} onChange={(event) => setField("fileUrl", event.target.value)} placeholder="https://example.com/notes.pdf" />
             </Field>
           </div>
           <Field label="Preview text" hint="Optional short extract shown in note details.">
             <textarea maxLength={10000} rows={4} value={form.previewText} onChange={(event) => setField("previewText", event.target.value)} placeholder="Add a short excerpt to help students preview the note..." />
           </Field>
           <div className="flex justify-end gap-2 border-t border-slate-800 pt-4">
-            <button type="button" className="secondary-button px-4" onClick={onClose} disabled={isSaving}>Cancel</button>
-            <button type="submit" className="primary-button" disabled={isSaving}>
+            <button type="button" className="secondary-button px-4" onClick={onClose} disabled={isSaving || isUploading}>Cancel</button>
+            <button type="submit" className="primary-button" disabled={isSaving || isUploading}>
               {isSaving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               {isSaving ? "Saving..." : note ? "Save changes" : "Create note"}
             </button>
@@ -544,11 +655,12 @@ function Field({ label, required, hint, children }: { label: string; required?: 
   );
 }
 
-function NoteDetails({ note, onClose, onEdit, onDelete, isDeleting }: {
+function NoteDetails({ note, onClose, onEdit, onDelete, onDownload, isDeleting }: {
   note: StudyNote;
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onDownload: () => void;
   isDeleting: boolean;
 }) {
   return (
@@ -578,7 +690,7 @@ function NoteDetails({ note, onClose, onEdit, onDelete, isDeleting }: {
               <span className="text-[10px] text-slate-500">{note.fileName || "No file attached"}{note.fileSize ? ` · ${note.fileSize}` : ""}</span>
             </div>
             <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-slate-300">{note.previewText || "No preview text has been added for this resource."}</pre>
-            {note.fileUrl && <a className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-sky-300 hover:text-sky-200" href={note.fileUrl} target="_blank" rel="noreferrer"><Download className="h-3.5 w-3.5" />Open resource</a>}
+            {note.fileUrl && <a className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-sky-300 hover:text-sky-200" href={note.fileUrl} target="_blank" rel="noreferrer" download={note.fileName || undefined} onClick={onDownload}><Download className="h-3.5 w-3.5" />Download notes</a>}
           </div>
           <p className="text-[10px] text-slate-500">Shared by {note.authorName} · {note.authorUniversity}</p>
         </div>

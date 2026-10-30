@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { noteRoutes } from "./notes/noteRoutes.js";
+import { uploadRoutes } from "./uploads/uploadRoutes.js";
 
 export const app = express();
 
@@ -21,6 +22,7 @@ app.get("/api/health", (_request, response) => {
   });
 });
 
+app.use("/api/uploads", uploadRoutes);
 app.use("/api/notes", noteRoutes);
 
 app.use("/api", (_request, response) => {
@@ -42,6 +44,16 @@ app.use((_request, response) => {
 });
 
 const errorHandler: ErrorRequestHandler = (error: unknown, _request, response, _next) => {
+  if (
+    typeof error === "object"
+    && error !== null
+    && "status" in error
+    && error.status === 413
+  ) {
+    response.status(413).json({ error: "File exceeds the 10 MB upload limit." });
+    return;
+  }
+
   console.error("API request failed:", error);
   if (error instanceof SyntaxError) {
     response.status(400).json({ error: "Request body must contain valid JSON." });

@@ -51,7 +51,7 @@ The Study Notes collection is the main project entity and has persistent, databa
 
 The directory supports text search, subject filtering, and sorting by recent, popularity, downloads, or title. Server-side Zod validation rejects incomplete, oversized, or unexpected input. The API returns explicit 400 and 404 responses for invalid data and identifiers.
 
-This local classroom demo does not include sign-in, authorization, or binary file uploads. It stores note metadata and optional public resource links. Do not expose the development API to the public internet or use real private student data.
+This local classroom demo does not include sign-in or authorization. Uploaded PDF, Word, and text files (up to 10 MB each) are stored under `server/.data/uploads`; note metadata is stored in MongoDB. Keep the API private and use only non-sensitive sample data. Uploaded files are local to the server and are not suitable for ephemeral hosting.
 
 ## Interface preview
 

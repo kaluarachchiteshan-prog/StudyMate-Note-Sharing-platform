@@ -2,7 +2,9 @@ import type { ApiFailure, NoteFilters, NoteInput, StudyNote } from "./types";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
-  if (init?.body) headers.set("Content-Type", "application/json");
+  if (typeof init?.body === "string" && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
   const response = await fetch(path, {
     ...init,
     headers,
@@ -15,6 +17,25 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
+}
+
+export async function uploadNoteFile(file: File) {
+  const result = await request<{
+    data: {
+      url: string;
+      fileName: string;
+      fileSize: string;
+      fileType: NoteInput["fileType"];
+    };
+  }>("/api/uploads", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/octet-stream",
+      "X-File-Name": encodeURIComponent(file.name),
+    },
+    body: file,
+  });
+  return result.data;
 }
 
 export async function fetchNotes(filters: NoteFilters, signal?: AbortSignal) {
@@ -38,6 +59,13 @@ export async function updateNote(id: string, input: NoteInput) {
   const result = await request<{ data: StudyNote }>(`/api/notes/${id}`, {
     method: "PUT",
     body: JSON.stringify(input),
+  });
+  return result.data;
+}
+
+export async function recordNoteDownload(id: string) {
+  const result = await request<{ data: { downloadsCount: number } }>(`/api/notes/${id}/download`, {
+    method: "POST",
   });
   return result.data;
 }

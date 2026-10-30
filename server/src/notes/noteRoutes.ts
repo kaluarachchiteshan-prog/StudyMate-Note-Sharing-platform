@@ -87,6 +87,32 @@ noteRoutes.post("/", async (request, response, next) => {
   }
 });
 
+noteRoutes.post("/:id/download", async (request, response, next) => {
+  try {
+    if (!mongoose.isValidObjectId(request.params.id)) {
+      response.status(400).json({ error: "Invalid note ID." });
+      return;
+    }
+
+    const note = await Note.findOneAndUpdate(
+      { _id: request.params.id, fileUrl: { $ne: "" } },
+      { $inc: { downloadsCount: 1 } },
+      { new: true, projection: { downloadsCount: 1 } },
+    ).lean();
+    if (!note) {
+      const exists = await Note.exists({ _id: request.params.id });
+      response.status(exists ? 400 : 404).json({
+        error: exists ? "This note has no file to download." : "Study note not found.",
+      });
+      return;
+    }
+
+    response.json({ data: { downloadsCount: note.downloadsCount } });
+  } catch (error) {
+    next(error);
+  }
+});
+
 noteRoutes.put("/:id", async (request, response, next) => {
   try {
     if (!mongoose.isValidObjectId(request.params.id)) {

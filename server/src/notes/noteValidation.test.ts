@@ -29,5 +29,6 @@ test("rejects incomplete data and unsupported properties", () => {
 
 test("rejects unsafe file URL schemes and oversized tag lists", () => {
   assert.equal(parseNoteInput({ ...validNote, fileUrl: "javascript:alert(1)" }).success, false);
+  assert.equal(parseNoteInput({ ...validNote, fileUrl: "/api/uploads/123e4567-e89b-12d3-a456-426614174000-notes.pdf" }).success, true);
   assert.equal(parseNoteInput({ ...validNote, tags: Array(11).fill("tag") }).success, false);
 });
