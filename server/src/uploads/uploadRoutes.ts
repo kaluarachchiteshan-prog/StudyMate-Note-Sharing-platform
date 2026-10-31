@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import express, { Router, type Request } from "express";
+import { requireAuth } from "../auth/authMiddleware.js";
 
 export const uploadRoutes = Router();
 
@@ -27,6 +28,7 @@ function decodeFileName(request: Request) {
 
 uploadRoutes.post(
   "/",
+  requireAuth,
   express.raw({ type: "application/octet-stream", limit: maxFileSize }),
   async (request, response, next) => {
     const fileName = decodeFileName(request);
@@ -65,9 +67,9 @@ uploadRoutes.post(
   },
 );
 
-uploadRoutes.get("/:fileName", async (request, response, next) => {
+uploadRoutes.get("/:fileName", requireAuth, async (request, response, next) => {
   const { fileName } = request.params;
-  if (!/^[0-9a-f-]{36}-[A-Za-z0-9._-]{1,180}$/i.test(fileName)) {
+  if (typeof fileName !== "string" || !/^[0-9a-f-]{36}-[A-Za-z0-9._-]{1,180}$/i.test(fileName)) {
     response.status(400).json({ error: "Invalid uploaded file name." });
     return;
   }

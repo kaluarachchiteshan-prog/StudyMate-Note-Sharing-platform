@@ -1,16 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import {
   AlertCircle,
   ArrowDownWideNarrow,
   BookOpen,
   Check,
+  ClipboardList,
   ChevronDown,
   Clock3,
   Download,
   FileText,
   GraduationCap,
+  KeyRound,
   Layers3,
   LoaderCircle,
+  LogIn,
+  LogOut,
   Menu,
   Pencil,
   Plus,
@@ -18,10 +22,13 @@ import {
   Sparkles,
   Tags,
   Trash2,
+  UserPlus,
   X,
 } from "lucide-react";
-import { createNote, deleteNote, fetchNotes, recordNoteDownload, updateNote, uploadNoteFile } from "./api";
-import type { NoteInput, NoteFilters, StudyNote } from "./types";
+import { createNote, deleteNote, fetchCurrentUser, fetchNotes, recordNoteDownload, signIn, signOut, signUp, updateNote, uploadNoteFile } from "./api";
+import NoteRequests from "./NoteRequests";
+import StudyGroups from "./StudyGroups";
+import type { AuthUser, NoteInput, NoteFilters, StudyNote } from "./types";
 
 const courseSubjects = [
   "EC4307 Web Application Development",
@@ -72,6 +79,23 @@ export default function App() {
   const [actionError, setActionError] = useState("");
   const [pendingId, setPendingId] = useState("");
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<"notes" | "groups" | "requests">("notes");
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [authDialogMode, setAuthDialogMode] = useState<"login" | "register" | null>(null);
+  const [authError, setAuthError] = useState("");
+  const [isAuthSubmitting, setIsAuthSubmitting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetchCurrentUser()
+      .then((currentUser) => {
+        if (active) setUser(currentUser);
+      })
+      .catch((error: unknown) => {
+        if (active) setAuthError(error instanceof Error ? error.message : "Could not check your sign-in status.");
+      });
+    return () => { active = false; };
+  }, []);
 
   const loadNotes = useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
@@ -104,13 +128,47 @@ export default function App() {
 
   const openCreateForm = () => {
     setActionError("");
+    if (!user) {
+      setAuthError("");
+      setAuthDialogMode("register");
+      return;
+    }
     setEditorNote("new");
   };
 
   const openEditForm = (note: StudyNote) => {
+    if (note.authorId !== user?.id) return;
     setActionError("");
     setEditorNote(note);
     setDetailNote(null);
+  };
+
+  const handleAuthSubmit = async (name: string, email: string, password: string) => {
+    setIsAuthSubmitting(true);
+    setAuthError("");
+    try {
+      const signedInUser = authDialogMode === "register"
+        ? await signUp(name, email, password)
+        : await signIn(email, password);
+      setUser(signedInUser);
+      setAuthDialogMode(null);
+      setNotice(`Welcome, ${signedInUser.name}!`);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Could not sign in. Please try again.");
+    } finally {
+      setIsAuthSubmitting(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    setActionError("");
+    try {
+      await signOut();
+      setUser(null);
+      setNotice("You have signed out.");
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not sign out. Please try again.");
+    }
   };
 
   const handleSave = async (input: NoteInput) => {
@@ -152,7 +210,14 @@ export default function App() {
     }
   };
 
-  const handleDownload = async (note: StudyNote) => {
+  const handleDownload = async (note: StudyNote, event: MouseEvent<HTMLAnchorElement>) => {
+    if (!user) {
+      event.preventDefault();
+      setAuthError("");
+      setAuthDialogMode("login");
+      return;
+    }
+
     setActionError("");
     try {
       const { downloadsCount } = await recordNoteDownload(note._id);
@@ -203,11 +268,28 @@ export default function App() {
               <span className="hidden text-[10px] font-medium tracking-wide text-slate-500 sm:block">NOTES & PEER LEARNING</span>
             </span>
           </a>
-          <button type="button" onClick={openCreateForm} className="primary-button">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Share a note</span>
-            <span className="sm:hidden">New note</span>
-          </button>
+          <div className="header-marquee" aria-label="Better Way To Improve Your Knowledge">
+            <span>LEARN TODAY, LEAD TOMORROW</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {user ? (
+              <>
+                <span className="hidden max-w-[150px] truncate text-xs text-slate-300 md:block" title={user.email}>{user.name}</span>
+                <button type="button" onClick={() => void handleSignOut()} className="secondary-button" aria-label="Sign out">
+                  <LogOut className="h-3.5 w-3.5" /><span className="hidden sm:inline">Sign out</span>
+                </button>
+              </>
+            ) : (
+              <button type="button" onClick={() => { setAuthError(""); setAuthDialogMode("login"); }} className="secondary-button">
+                <LogIn className="h-3.5 w-3.5" />Sign in
+              </button>
+            )}
+            <button type="button" onClick={openCreateForm} className="primary-button">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Share a note</span>
+              <span className="sm:hidden">New note</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -230,16 +312,36 @@ export default function App() {
           } shrink-0 lg:sticky lg:bottom-auto lg:left-auto lg:top-[72px] lg:z-20 lg:block lg:h-[calc(100vh-72px)] lg:w-[250px] lg:overflow-y-auto lg:border-r lg:border-slate-800/70 lg:bg-transparent lg:px-4 lg:py-8 lg:shadow-none`}
         >
           <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">Workspace</p>
-          <div className="nav-item nav-item-active">
+          <button
+            type="button"
+            className={`nav-item w-full text-left ${activeSection === "notes" ? "nav-item-active" : ""}`}
+            onClick={() => { setActiveSection("notes"); setIsMobileSidebarOpen(false); }}
+            aria-current={activeSection === "notes" ? "page" : undefined}
+          >
             <BookOpen className="h-4 w-4" />
             Note-Sharing Hub
             <span className="ml-auto rounded-md bg-sky-400/15 px-1.5 py-0.5 text-[10px] text-sky-300">{notes.length}</span>
-          </div>
-          <div className="nav-item opacity-55" title="Study group management is outside this project scope">
+          </button>
+          <button
+            type="button"
+            className={`nav-item w-full text-left ${activeSection === "groups" ? "nav-item-active" : ""}`}
+            onClick={() => { setActiveSection("groups"); setIsMobileSidebarOpen(false); }}
+            aria-current={activeSection === "groups" ? "page" : undefined}
+          >
             <Layers3 className="h-4 w-4" />
             Study Groups
-            <span className="ml-auto text-[9px] uppercase tracking-wider">Later</span>
-          </div>
+            <span className="ml-auto rounded-md bg-sky-400/15 px-1.5 py-0.5 text-[10px] text-sky-300">Open</span>
+          </button>
+          <button
+            type="button"
+            className={`nav-item w-full text-left ${activeSection === "requests" ? "nav-item-active" : ""}`}
+            onClick={() => { setActiveSection("requests"); setIsMobileSidebarOpen(false); }}
+            aria-current={activeSection === "requests" ? "page" : undefined}
+          >
+            <ClipboardList className="h-4 w-4" />
+            Note Requests
+            <span className="ml-auto rounded-md bg-sky-400/15 px-1.5 py-0.5 text-[10px] text-sky-300">Public</span>
+          </button>
 
           <div className="mt-10 rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
             <div className="mb-4 flex items-center gap-2 text-xs font-semibold text-white">
@@ -266,6 +368,24 @@ export default function App() {
 
         <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-9">
           <div className="mx-auto max-w-[1120px] space-y-6">
+            {activeSection === "groups" ? (
+              <StudyGroups
+                user={user}
+                onRequireAuth={() => {
+                  setAuthError("");
+                  setAuthDialogMode("login");
+                }}
+              />
+            ) : activeSection === "requests" ? (
+              <NoteRequests
+                user={user}
+                onRequireAuth={() => {
+                  setAuthError("");
+                  setAuthDialogMode("register");
+                }}
+              />
+            ) : (
+              <>
             <section className="hero-panel">
               <div className="relative z-10 max-w-2xl">
                 <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-sky-400/20 bg-sky-400/[0.08] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-300">
@@ -280,6 +400,11 @@ export default function App() {
             {actionError && (
               <div role="alert" className="flex items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {actionError}
+              </div>
+            )}
+            {authError && !authDialogMode && (
+              <div role="alert" className="flex items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {authError}
               </div>
             )}
             {notice && (
@@ -356,6 +481,7 @@ export default function App() {
                   <NoteCard
                     key={note._id}
                     note={note}
+                    canManage={note.authorId === user?.id}
                     isPending={pendingId === note._id}
                     onPreview={() => {
                       setRecentlyViewedSubject(note.subject);
@@ -363,7 +489,7 @@ export default function App() {
                     }}
                     onEdit={() => openEditForm(note)}
                     onDelete={() => void handleDelete(note)}
-                    onDownload={() => void handleDownload(note)}
+                    onDownload={(event) => void handleDownload(note, event)}
                   />
                 ))}
               </div>
@@ -379,6 +505,8 @@ export default function App() {
             <footer className="border-t border-slate-800/70 py-5 text-center text-[10px] text-slate-600">
               StudyMate Hub · MERN mini project · Notes are stored in MongoDB
             </footer>
+              </>
+            )}
           </div>
         </main>
       </div>
@@ -395,11 +523,23 @@ export default function App() {
       {detailNote && (
         <NoteDetails
           note={detailNote}
+          canManage={detailNote.authorId === user?.id}
           onClose={() => setDetailNote(null)}
           onEdit={() => openEditForm(detailNote)}
           onDelete={() => void handleDelete(detailNote)}
-          onDownload={() => void handleDownload(detailNote)}
+          onDownload={(event) => void handleDownload(detailNote, event)}
           isDeleting={pendingId === detailNote._id}
+        />
+      )}
+      {authDialogMode && (
+        <AuthDialog
+          key={authDialogMode}
+          mode={authDialogMode}
+          error={authError}
+          isSubmitting={isAuthSubmitting}
+          onClose={() => setAuthDialogMode(null)}
+          onModeChange={(mode) => { setAuthError(""); setAuthDialogMode(mode); }}
+          onSubmit={handleAuthSubmit}
         />
       )}
     </div>
@@ -408,6 +548,7 @@ export default function App() {
 
 function NoteCard({
   note,
+  canManage,
   isPending,
   onPreview,
   onEdit,
@@ -415,11 +556,12 @@ function NoteCard({
   onDownload,
 }: {
   note: StudyNote;
+  canManage: boolean;
   isPending: boolean;
   onPreview: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onDownload: () => void;
+  onDownload: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   return (
     <article className="note-card group">
@@ -466,10 +608,14 @@ function NoteCard({
         </div>
         <div className="mt-3 flex gap-2">
           <button type="button" onClick={onPreview} className="secondary-button flex-1">View details</button>
-          <button type="button" onClick={onEdit} className="icon-button" aria-label={`Edit ${note.title}`}><Pencil className="h-3.5 w-3.5" /></button>
-          <button type="button" onClick={onDelete} disabled={isPending} className="icon-button icon-button-danger" aria-label={`Delete ${note.title}`}>
-            {isPending ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-          </button>
+          {canManage && (
+            <>
+              <button type="button" onClick={onEdit} className="icon-button" aria-label={`Edit ${note.title}`}><Pencil className="h-3.5 w-3.5" /></button>
+              <button type="button" onClick={onDelete} disabled={isPending} className="icon-button icon-button-danger" aria-label={`Delete ${note.title}`}>
+                {isPending ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </article>
@@ -655,12 +801,13 @@ function Field({ label, required, hint, children }: { label: string; required?: 
   );
 }
 
-function NoteDetails({ note, onClose, onEdit, onDelete, onDownload, isDeleting }: {
+function NoteDetails({ note, canManage, onClose, onEdit, onDelete, onDownload, isDeleting }: {
   note: StudyNote;
+  canManage: boolean;
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onDownload: () => void;
+  onDownload: (event: MouseEvent<HTMLAnchorElement>) => void;
   isDeleting: boolean;
 }) {
   return (
@@ -695,9 +842,75 @@ function NoteDetails({ note, onClose, onEdit, onDelete, onDownload, isDeleting }
           <p className="text-[10px] text-slate-500">Shared by {note.authorName} · {note.authorUniversity}</p>
         </div>
         <div className="flex items-center justify-between border-t border-slate-800 px-5 py-4 sm:px-6">
-          <button type="button" onClick={onDelete} disabled={isDeleting} className="danger-button">{isDeleting ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}Delete</button>
-          <div className="flex gap-2"><button type="button" onClick={onClose} className="secondary-button px-4">Close</button><button type="button" onClick={onEdit} className="primary-button"><Pencil className="h-3.5 w-3.5" />Edit note</button></div>
+          {canManage ? (
+            <button type="button" onClick={onDelete} disabled={isDeleting} className="danger-button">{isDeleting ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}Delete</button>
+          ) : <span />}
+          <div className="flex gap-2"><button type="button" onClick={onClose} className="secondary-button px-4">Close</button>{canManage && <button type="button" onClick={onEdit} className="primary-button"><Pencil className="h-3.5 w-3.5" />Edit note</button>}</div>
         </div>
+      </section>
+    </div>
+  );
+}
+
+function AuthDialog({
+  mode,
+  error,
+  isSubmitting,
+  onClose,
+  onModeChange,
+  onSubmit,
+}: {
+  mode: "login" | "register";
+  error: string;
+  isSubmitting: boolean;
+  onClose: () => void;
+  onModeChange: (mode: "login" | "register") => void;
+  onSubmit: (name: string, email: string, password: string) => Promise<void>;
+}) {
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    void onSubmit(
+      String(formData.get("name") || ""),
+      String(formData.get("email") || ""),
+      String(formData.get("password") || ""),
+    );
+  };
+
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="modal-panel max-w-md" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title">
+        <div className="flex items-start justify-between border-b border-slate-800 px-5 py-4 sm:px-6">
+          <div>
+            <h2 id="auth-dialog-title" className="font-display text-lg font-semibold text-white">{mode === "login" ? "Welcome back" : "Create your account"}</h2>
+            <p className="mt-1 text-[11px] text-slate-400">{mode === "login" ? "Sign in to upload and download study notes." : "Create an account to upload and download study notes."}</p>
+          </div>
+          <button type="button" className="icon-button" onClick={onClose} aria-label="Close sign-in form"><X className="h-4 w-4" /></button>
+        </div>
+        <form onSubmit={submit} className="space-y-4 p-5 sm:p-6">
+          {error && <p role="alert" className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">{error}</p>}
+          {mode === "register" && (
+            <Field label="Full name" required>
+              <input name="name" required minLength={2} maxLength={80} autoComplete="name" placeholder="Your name" />
+            </Field>
+          )}
+          <Field label="Email" required>
+            <input name="email" type="email" required maxLength={254} autoComplete="email" placeholder="you@example.com" />
+          </Field>
+          <Field label="Password" required hint={mode === "register" ? "Use at least 8 characters." : undefined}>
+            <input name="password" type="password" required minLength={mode === "register" ? 8 : undefined} maxLength={128} autoComplete={mode === "login" ? "current-password" : "new-password"} placeholder="Enter your password" />
+          </Field>
+          <button type="submit" className="primary-button w-full" disabled={isSubmitting}>
+            {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : mode === "login" ? <KeyRound className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+            {isSubmitting ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
+          </button>
+          <p className="text-center text-xs text-slate-400">
+            {mode === "login" ? "New to StudyMate?" : "Already have an account?"}{" "}
+            <button type="button" className="font-semibold text-sky-300 hover:text-sky-200" onClick={() => onModeChange(mode === "login" ? "register" : "login")}>
+              {mode === "login" ? "Create an account" : "Sign in"}
+            </button>
+          </p>
+        </form>
       </section>
     </div>
   );

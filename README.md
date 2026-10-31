@@ -44,6 +44,8 @@ The Study Notes collection is the main project entity and has persistent, databa
 
 | Operation | Interface | API |
 | --- | --- | --- |
+| Create account / sign in | Sign-in button in the header | `POST /api/auth/register`, `POST /api/auth/login` |
+| Check session / sign out | Account controls in the header | `GET /api/auth/me`, `POST /api/auth/logout` |
 | Create | Share a note form | `POST /api/notes` |
 | Read | Note list and detail dialog | `GET /api/notes`, `GET /api/notes/:id` |
 | Update | Edit note form | `PUT /api/notes/:id` |
@@ -51,7 +53,34 @@ The Study Notes collection is the main project entity and has persistent, databa
 
 The directory supports text search, subject filtering, and sorting by recent, popularity, downloads, or title. Server-side Zod validation rejects incomplete, oversized, or unexpected input. The API returns explicit 400 and 404 responses for invalid data and identifiers.
 
-This local classroom demo does not include sign-in or authorization. Uploaded PDF, Word, and text files (up to 10 MB each) are stored under `server/.data/uploads`; note metadata is stored in MongoDB. Keep the API private and use only non-sensitive sample data. Uploaded files are local to the server and are not suitable for ephemeral hosting.
+Browsing notes is public, but creating an account or signing in is required to upload files, create notes, and download notes. Only the account that shared a note can edit or delete it. Passwords are stored as scrypt hashes, and sign-in sessions use expiring, HTTP-only cookies backed by MongoDB. Existing demo notes remain readable but are not editable by newly registered accounts. Uploaded PDF, Word, and text files (up to 10 MB each) are stored under `server/.data/uploads`; note metadata and user sessions are stored in MongoDB. Keep the API private and use only non-sensitive sample data. Uploaded files are local to the server and are not suitable for ephemeral hosting.
+
+## Study groups
+
+The Study Groups item in the sidebar opens a MongoDB-backed group directory. Visitors can browse and search groups; a signed-in account is required to create a group or join/leave one. Group members can open a group space to see its roster, post persistent discussion messages, and create shared study tasks with due dates. Members can mark tasks complete, and only group members can read or update group activity.
+
+| Operation | API |
+| --- | --- |
+| Browse groups | `GET /api/study-groups` |
+| Create a group | `POST /api/study-groups` |
+| View member roster | `GET /api/study-groups/:id` |
+| Read group discussion | `GET /api/study-groups/:id/messages` |
+| Post a discussion message | `POST /api/study-groups/:id/messages` |
+| List shared study tasks | `GET /api/study-groups/:id/tasks` |
+| Create a study task | `POST /api/study-groups/:id/tasks` |
+| Update task completion | `PATCH /api/study-groups/:id/tasks/:taskId` |
+| Join a group | `POST /api/study-groups/:id/join` |
+| Leave a group | `DELETE /api/study-groups/:id/membership` |
+
+## Public note requests
+
+The Note Requests section is a public board: anyone can browse open or fulfilled requests and search by title, subject, or course code. Signed-in users can post a request, which displays their account name publicly, and mark their own requests fulfilled.
+
+| Operation | API |
+| --- | --- |
+| Browse requests by status | `GET /api/note-requests?status=open` |
+| Post a public request | `POST /api/note-requests` |
+| Mark your request fulfilled | `PATCH /api/note-requests/:id/status` |
 
 ## Interface preview
 

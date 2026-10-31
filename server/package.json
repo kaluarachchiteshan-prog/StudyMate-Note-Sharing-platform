@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/start.ts",
-    "test": "tsx --test src/notes/noteValidation.test.ts",
+    "test": "tsx --test src/notes/noteValidation.test.ts src/auth/authValidation.test.ts src/studyGroups/studyGroupValidation.test.ts src/studyGroups/studyGroupMessageValidation.test.ts src/studyGroups/studyGroupTaskValidation.test.ts src/noteRequests/noteRequestValidation.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import mongoose from "mongoose";
+import { requireAuth } from "../auth/authMiddleware.js";
 import { Note } from "./noteModel.js";
 import { parseNoteInput } from "./noteValidation.js";
 
@@ -64,7 +65,7 @@ noteRoutes.get("/:id", async (request, response, next) => {
   }
 });
 
-noteRoutes.post("/", async (request, response, next) => {
+noteRoutes.post("/", requireAuth, async (request, response, next) => {
   try {
     const parsed = parseNoteInput(request.body);
     if (!parsed.success) {
@@ -74,7 +75,8 @@ noteRoutes.post("/", async (request, response, next) => {
 
     const note = await Note.create({
       ...parsed.data,
-      authorName: process.env.DEMO_AUTHOR_NAME || "StudyMate Student",
+      authorId: request.authUser!.id,
+      authorName: request.authUser!.name,
       authorUniversity: parsed.data.university,
       upvotes: 0,
       downvotes: 0,
@@ -87,7 +89,7 @@ noteRoutes.post("/", async (request, response, next) => {
   }
 });
 
-noteRoutes.post("/:id/download", async (request, response, next) => {
+noteRoutes.post("/:id/download", requireAuth, async (request, response, next) => {
   try {
     if (!mongoose.isValidObjectId(request.params.id)) {
       response.status(400).json({ error: "Invalid note ID." });
@@ -113,7 +115,7 @@ noteRoutes.post("/:id/download", async (request, response, next) => {
   }
 });
 
-noteRoutes.put("/:id", async (request, response, next) => {
+noteRoutes.put("/:id", requireAuth, async (request, response, next) => {
   try {
     if (!mongoose.isValidObjectId(request.params.id)) {
       response.status(400).json({ error: "Invalid note ID." });
@@ -126,13 +128,16 @@ noteRoutes.put("/:id", async (request, response, next) => {
       return;
     }
 
-    const note = await Note.findByIdAndUpdate(
-      request.params.id,
+    const note = await Note.findOneAndUpdate(
+      { _id: request.params.id, authorId: request.authUser!.id },
       { $set: parsed.data },
       { new: true, runValidators: true },
     );
     if (!note) {
-      response.status(404).json({ error: "Study note not found." });
+      const exists = await Note.exists({ _id: request.params.id });
+      response.status(exists ? 403 : 404).json({
+        error: exists ? "You can only edit notes you shared." : "Study note not found.",
+      });
       return;
     }
     response.json({ data: note });
@@ -141,16 +146,19 @@ noteRoutes.put("/:id", async (request, response, next) => {
   }
 });
 
-noteRoutes.delete("/:id", async (request, response, next) => {
+noteRoutes.delete("/:id", requireAuth, async (request, response, next) => {
   try {
     if (!mongoose.isValidObjectId(request.params.id)) {
       response.status(400).json({ error: "Invalid note ID." });
       return;
     }
 
-    const note = await Note.findByIdAndDelete(request.params.id);
+    const note = await Note.findOneAndDelete({ _id: request.params.id, authorId: request.authUser!.id });
     if (!note) {
-      response.status(404).json({ error: "Study note not found." });
+      const exists = await Note.exists({ _id: request.params.id });
+      response.status(exists ? 403 : 404).json({
+        error: exists ? "You can only delete notes you shared." : "Study note not found.",
+      });
       return;
     }
     response.status(204).end();

@@ -4,7 +4,10 @@ import helmet from "helmet";
 import mongoose from "mongoose";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { authRoutes } from "./auth/authRoutes.js";
+import { noteRequestRoutes } from "./noteRequests/noteRequestRoutes.js";
 import { noteRoutes } from "./notes/noteRoutes.js";
+import { studyGroupRoutes } from "./studyGroups/studyGroupRoutes.js";
 import { uploadRoutes } from "./uploads/uploadRoutes.js";
 
 export const app = express();
@@ -22,8 +25,11 @@ app.get("/api/health", (_request, response) => {
   });
 });
 
+app.use("/api/auth", authRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/notes", noteRoutes);
+app.use("/api/note-requests", noteRequestRoutes);
+app.use("/api/study-groups", studyGroupRoutes);
 
 app.use("/api", (_request, response) => {
   response.status(404).json({ error: "API route not found." });
